@@ -1,79 +1,64 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import fs from 'fs'
+import path from 'path'
 
 const prisma = new PrismaClient()
-
-const users = [
-  // Administrator (1)
-  {
-    nama: 'Fahry Aditya',
-    email: 'Fahryadityaadmin@gmail.com',
-    password: 'AdministratorFahry',
-    role: 'administrator' as const,
-  },
-  // Admin Programming (3)
-  {
-    nama: 'Admin Programming 1',
-    email: 'programmingakarlakes1@gmail.com',
-    password: 'pgskarlakes1',
-    role: 'admin_programming' as const,
-  },
-  {
-    nama: 'Admin Programming 2',
-    email: 'programmingakarlakes2@gmail.com',
-    password: 'pgskarlakes2',
-    role: 'admin_programming' as const,
-  },
-  {
-    nama: 'Admin Programming 3',
-    email: 'programmingakarlakes3@gmail.com',
-    password: 'pgskarlakes3',
-    role: 'admin_programming' as const,
-  },
-  // Admin English Club (3)
-  {
-    nama: 'Admin English Club 1',
-    email: 'Englishclubskarla1@gmail.com',
-    password: 'EnglishSkarla1',
-    role: 'admin_english' as const,
-  },
-  {
-    nama: 'Admin English Club 2',
-    email: 'Englishclubskarla2@gmail.com',
-    password: 'EnglishSkarla2',
-    role: 'admin_english' as const,
-  },
-  {
-    nama: 'Admin English Club 3',
-    email: 'Englishclubskarla3@gmail.com',
-    password: 'EnglishSkarla3',
-    role: 'admin_english' as const,
-  },
-  // Admin OSIS & MPK (3)
-  {
-    nama: 'Admin OSIS & MPK 1',
-    email: 'osismpkskarlakes1@gmail.com',
-    password: 'osismpk1',
-    role: 'admin_osis_mpk' as const,
-  },
-  {
-    nama: 'Admin OSIS & MPK 2',
-    email: 'osismpkskarlakes2@gmail.com',
-    password: 'osismpk2',
-    role: 'admin_osis_mpk' as const,
-  },
-  {
-    nama: 'Admin OSIS & MPK 3',
-    email: 'osismpkskarlakes3@gmail.com',
-    password: 'osismpk3',
-    role: 'admin_osis_mpk' as const,
-  },
-]
 
 async function main() {
   console.log('🌱 Seeding database...')
 
-  for (const u of users) {
+  // 1. Load users dari script/users.json jika ada
+  let jsonUsers: any[] = []
+  const jsonPath = path.join(process.cwd(), 'script', 'users.json')
+  
+  if (fs.existsSync(jsonPath)) {
+    try {
+      const content = fs.readFileSync(jsonPath, 'utf-8')
+      jsonUsers = JSON.parse(content).map((u: any) => ({
+        nama: u.nama,
+        email: u.email,
+        password: u.pw || u.password, // Menangani field 'pw' atau 'password'
+        role: u.role || 'administrator' // Default ke administrator jika tidak ada
+      }))
+      console.log(`📂 Berhasil memuat ${jsonUsers.length} user dari ${jsonPath}`)
+    } catch (err) {
+      console.error('⚠️ Gagal membaca users.json:', err)
+    }
+  }
+
+  // 2. Daftar user bawaan (hardcoded)
+  const defaultUsers = [
+    {
+      nama: 'Fahry Aditya',
+      email: 'Fahryadityaadmin@gmail.com',
+      password: 'AdministratorFahry',
+      role: 'administrator' as const,
+    },
+    {
+      nama: 'Admin Programming 1',
+      email: 'programmingakarlakes1@gmail.com',
+      password: 'pgskarlakes1',
+      role: 'admin_programming' as const,
+    },
+    {
+      nama: 'Admin English Club 1',
+      email: 'Englishclubskarla1@gmail.com',
+      password: 'EnglishSkarla1',
+      role: 'admin_english' as const,
+    },
+    {
+      nama: 'Admin OSIS & MPK 1',
+      email: 'osismpkskarlakes1@gmail.com',
+      password: 'osismpk1',
+      role: 'admin_osis_mpk' as const,
+    },
+  ]
+
+  // Gabungkan semua user (JSON + Default)
+  const allUsers = [...jsonUsers, ...defaultUsers]
+
+  for (const u of allUsers) {
     const existing = await prisma.user.findUnique({ where: { email: u.email } })
     if (existing) {
       console.log(`⏭️  Skip: ${u.email} (sudah ada)`)
@@ -81,15 +66,18 @@ async function main() {
     }
     const hashed = await bcrypt.hash(u.password, 12)
     await prisma.user.create({
-      data: { nama: u.nama, email: u.email, password: hashed, role: u.role }
+      data: { 
+        nama: u.nama, 
+        email: u.email, 
+        password: hashed, 
+        role: u.role as any 
+      }
     })
     console.log(`✅ Created: ${u.email} [${u.role}]`)
   }
 
-  // Seed contoh siswa
+  // 3. Seed contoh siswa (Programming)
   const adminProg = await prisma.user.findFirst({ where: { role: 'admin_programming' } })
-  const adminEng = await prisma.user.findFirst({ where: { role: 'admin_english' } })
-
   if (adminProg) {
     const existSiswa = await prisma.siswa.count({ where: { ekskul: 'programming' } })
     if (existSiswa === 0) {
@@ -101,42 +89,17 @@ async function main() {
     }
   }
 
-  if (adminEng) {
-    const existSiswa = await prisma.siswa.count({ where: { ekskul: 'english' } })
-    if (existSiswa === 0) {
-      const siswaEng = ['Fajar Hidayat', 'Gita Lestari', 'Hendra Wijaya', 'Indah Permata', 'Joko Susilo']
-      for (const nama of siswaEng) {
-        await prisma.siswa.create({ data: { nama, ekskul: 'english', kelas: 'X IPA', created_by: adminEng.id } })
-      }
-      console.log('✅ Seeded: 5 siswa English Club')
-    }
-  }
-
-  // Seed contoh anggota OSIS
+  // 4. Seed contoh anggota OSIS
   const existOsis = await prisma.anggotaOsis.count()
   if (existOsis === 0) {
     const anggotaOsis = [
       { nama: 'Ketua OSIS', jabatan: 'Ketua', kelas: 'XI IPA 1' },
       { nama: 'Wakil Ketua', jabatan: 'Wakil Ketua', kelas: 'XI IPS 2' },
-      { nama: 'Sekretaris OSIS', jabatan: 'Sekretaris', kelas: 'X IPA 3' },
     ]
     for (const a of anggotaOsis) {
       await prisma.anggotaOsis.create({ data: a })
     }
-    console.log('✅ Seeded: 3 anggota OSIS')
-  }
-
-  // Seed contoh anggota MPK
-  const existMpk = await prisma.anggotaMpk.count()
-  if (existMpk === 0) {
-    const anggotaMpk = [
-      { nama: 'Ketua MPK', jabatan: 'Ketua', kelas: 'XII IPA 1' },
-      { nama: 'Wakil Ketua MPK', jabatan: 'Wakil Ketua', kelas: 'XII IPS 1' },
-    ]
-    for (const a of anggotaMpk) {
-      await prisma.anggotaMpk.create({ data: a })
-    }
-    console.log('✅ Seeded: 2 anggota MPK')
+    console.log('✅ Seeded: 2 anggota OSIS')
   }
 
   console.log('🎉 Seeding selesai!')
