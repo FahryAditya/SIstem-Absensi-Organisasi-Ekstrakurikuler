@@ -41,54 +41,102 @@ export async function POST(req: NextRequest) {
     }
 
     let namaAnggota = ''
+    const today = new Date()
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
 
     if (org === 'programming' || org === 'english') {
       const siswa = await prisma.siswa.findUnique({ where: { id: id_anggota } })
       if (!siswa || siswa.ekskul !== org) return NextResponse.json({ error: 'Siswa tidak valid' }, { status: 400 })
       namaAnggota = siswa.nama
 
-      await prisma.absensi.create({
-        data: {
-          siswa_id: id_anggota,
-          tanggal: new Date(),
-          status: 'kas_saja' as any,
-          uang_kas: nominal,
-          keterangan: keterangan,
-          created_by: ctx.userId,
-        }
+      const existing = await prisma.absensi.findFirst({
+        where: { siswa_id: id_anggota, tanggal: { gte: startOfDay, lte: endOfDay } }
       })
+
+      if (existing) {
+        await prisma.absensi.update({
+          where: { id: existing.id },
+          data: {
+            uang_kas: existing.uang_kas + nominal,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            updated_by: ctx.userId
+          }
+        })
+      } else {
+        await prisma.absensi.create({
+          data: {
+            siswa_id: id_anggota,
+            tanggal: startOfDay,
+            status: 'kas_saja' as any,
+            uang_kas: nominal,
+            keterangan: keterangan,
+            created_by: ctx.userId,
+          }
+        })
+      }
     } else if (org === 'osis') {
       const anggota = await prisma.anggotaOsis.findUnique({ where: { id: id_anggota } })
       if (!anggota) return NextResponse.json({ error: 'Anggota tidak valid' }, { status: 400 })
       namaAnggota = anggota.nama
 
-      await prisma.absensiOrganisasi.create({
-        data: {
-          organisasi_type: 'osis',
-          anggota_osis_id: id_anggota,
-          tanggal: new Date(),
-          status: 'kas_saja' as any,
-          uang_kas: nominal,
-          keterangan: keterangan,
-          created_by: ctx.userId,
-        }
+      const existing = await prisma.absensiOrganisasi.findFirst({
+        where: { organisasi_type: 'osis', anggota_osis_id: id_anggota, tanggal: { gte: startOfDay, lte: endOfDay } }
       })
+
+      if (existing) {
+        await prisma.absensiOrganisasi.update({
+          where: { id: existing.id },
+          data: {
+            uang_kas: existing.uang_kas + nominal,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            updated_by: ctx.userId
+          }
+        })
+      } else {
+        await prisma.absensiOrganisasi.create({
+          data: {
+            organisasi_type: 'osis',
+            anggota_osis_id: id_anggota,
+            tanggal: startOfDay,
+            status: 'kas_saja' as any,
+            uang_kas: nominal,
+            keterangan: keterangan,
+            created_by: ctx.userId,
+          }
+        })
+      }
     } else if (org === 'mpk') {
       const anggota = await prisma.anggotaMpk.findUnique({ where: { id: id_anggota } })
       if (!anggota) return NextResponse.json({ error: 'Anggota tidak valid' }, { status: 400 })
       namaAnggota = anggota.nama
 
-      await prisma.absensiOrganisasi.create({
-        data: {
-          organisasi_type: 'mpk',
-          anggota_mpk_id: id_anggota,
-          tanggal: new Date(),
-          status: 'kas_saja' as any,
-          uang_kas: nominal,
-          keterangan: keterangan,
-          created_by: ctx.userId,
-        }
+      const existing = await prisma.absensiOrganisasi.findFirst({
+        where: { organisasi_type: 'mpk', anggota_mpk_id: id_anggota, tanggal: { gte: startOfDay, lte: endOfDay } }
       })
+
+      if (existing) {
+        await prisma.absensiOrganisasi.update({
+          where: { id: existing.id },
+          data: {
+            uang_kas: existing.uang_kas + nominal,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            updated_by: ctx.userId
+          }
+        })
+      } else {
+        await prisma.absensiOrganisasi.create({
+          data: {
+            organisasi_type: 'mpk',
+            anggota_mpk_id: id_anggota,
+            tanggal: startOfDay,
+            status: 'kas_saja' as any,
+            uang_kas: nominal,
+            keterangan: keterangan,
+            created_by: ctx.userId,
+          }
+        })
+      }
     }
 
     const actionText = nominal > 0 ? 'menambahkan' : 'mengurangi'
