@@ -26,9 +26,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Redirect root to dashboard
+  // Redirect root to login
   if (pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Protect log aktivitas - administrator only
