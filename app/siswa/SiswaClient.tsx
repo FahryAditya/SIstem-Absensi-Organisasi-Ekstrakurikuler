@@ -36,6 +36,11 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Bulk delete state
+  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([])
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
+
   // Form state
   const [fNama, setFNama] = useState('')
   const [fNis, setFNis] = useState('')
@@ -61,7 +66,8 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
   }, [page, search, orgFilter])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { setPage(1) }, [search, orgFilter])
+  useEffect(() => { setPage(1); setSelectedIds([]) }, [search, orgFilter])
+  useEffect(() => { setSelectedIds([]) }, [page])
 
   function openAdd() {
     setEditTarget(null)
@@ -101,6 +107,17 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
     toast.success('Siswa dihapus')
     setDeleting(false); setDeleteTarget(null); load()
   }
+
+  async function handleBulkDelete() {
+    if (selectedIds.length === 0) return
+    setBulkDeleting(true)
+    const res = await fetch(`/api/siswa?ids=${selectedIds.join(',')}`, { method: 'DELETE' })
+    const json = await res.json()
+    if (!res.ok) { toast.error(json.error || 'Gagal menghapus'); setBulkDeleting(false); return }
+    toast.success(`${selectedIds.length} data siswa dihapus`)
+    setBulkDeleting(false); setBulkDeleteConfirmOpen(false); setSelectedIds([]); load()
+  }
+
 
   const columns = [
     { key: 'no', label: 'No', render: (_: Siswa, i?: number) => <span className="text-slate-400 font-mono text-xs">{(page - 1) * PAGE_SIZE + (i ?? 0) + 1}</span> },
@@ -143,9 +160,16 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
           </div>
           <p className="page-sub mt-0.5">Kelola daftar siswa ekstrakurikuler</p>
         </div>
-        <button onClick={openAdd} className="btn-primary">
-          <Plus className="w-4 h-4" /> Tambah Siswa
-        </button>
+        <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <button onClick={() => setBulkDeleteConfirmOpen(true)} className="btn-secondary text-red-600 border-red-200 hover:bg-red-50">
+              <Trash2 className="w-4 h-4" /> Hapus Terpilih ({selectedIds.length})
+            </button>
+          )}
+          <button onClick={openAdd} className="btn-primary">
+            <Plus className="w-4 h-4" /> Tambah Siswa
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -178,6 +202,9 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
         total={total}
         onPageChange={setPage}
         rowKey={s => (s as Siswa).id}
+        selectable
+        selectedKeys={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       {/* Modal */}
@@ -231,6 +258,15 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirmOpen}
+        title="Hapus Siswa Terpilih?"
+        message={`Sebanyak ${selectedIds.length} data siswa dan semua riwayat absensinya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`}
+        loading={bulkDeleting}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteConfirmOpen(false)}
       />
     </div>
   )

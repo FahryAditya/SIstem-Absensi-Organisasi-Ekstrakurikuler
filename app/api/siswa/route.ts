@@ -111,26 +111,50 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const ctx = getCtx(req)
   const { searchParams } = new URL(req.url)
-  const id = parseInt(searchParams.get('id') || '0')
-  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+  const idStr = searchParams.get('id')
+  const idsStr = searchParams.get('ids')
+  
+  let idsToDelete: number[] = []
+  
+  if (idStr) {
+    const id = parseInt(idStr)
+    if (id) idsToDelete.push(id)
+  } else if (idsStr) {
+    idsToDelete = idsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
+  }
 
-  const existing = await prisma.siswa.findUnique({ where: { id } })
-  if (!existing) return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 })
+  if (idsToDelete.length === 0) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  if (existing.ekskul === 'programming' && !canAccessProgramming(ctx.userRole))
-    return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
-  if (existing.ekskul === 'english' && !canAccessEnglish(ctx.userRole))
-    return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
+  const existingRecords = await prisma.siswa.findMany({ where: { id: { in: idsToDelete } } })
+  if (existingRecords.length === 0) return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 })
 
-  await prisma.siswa.delete({ where: { id } })
+  for (const existing of existingRecords) {
+    if (existing.ekskul === 'programming' && !canAccessProgramming(ctx.userRole))
+      return NextResponse.json({ error: `Akses ditolak untuk data ${existing.nama}` }, { status: 403 })
+    if (existing.ekskul === 'english' && !canAccessEnglish(ctx.userRole))
+      return NextResponse.json({ error: `Akses ditolak untuk data ${existing.nama}` }, { status: 403 })
+  }
 
-  await createLog({
-    userId: ctx.userId, userNama: ctx.userNama, aksi: 'DELETE',
-    tabel: 'siswa', recordId: id,
-    deskripsi: `${ctx.userNama} menghapus siswa "${existing.nama}" dari ${existing.ekskul}`,
-    dataLama: { nama: existing.nama, ekskul: existing.ekskul },
-    ipAddress: getIp(req),
-  })
+  await prisma.siswa.deleteMany({ where: { id: { in: idsToDelete } } })
+
+  if (idsToDelete.length === 1) {
+    const existing = existingRecords[0]
+    await createLog({
+      userId: ctx.userId, userNama: ctx.userNama, aksi: 'DELETE',
+      tabel: 'siswa', recordId: existing.id,
+      deskripsi: `${ctx.userNama} menghapus siswa "${existing.nama}" dari ${existing.ekskul}`,
+      dataLama: { nama: existing.nama, ekskul: existing.ekskul },
+      ipAddress: getIp(req),
+    })
+  } else {
+    await createLog({
+      userId: ctx.userId, userNama: ctx.userNama, aksi: 'DELETE',
+      tabel: 'siswa', recordId: 0,
+      deskripsi: `${ctx.userNama} menghapus ${idsToDelete.length} data siswa sekaligus`,
+      dataLama: { count: idsToDelete.length, ids: idsToDelete },
+      ipAddress: getIp(req),
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

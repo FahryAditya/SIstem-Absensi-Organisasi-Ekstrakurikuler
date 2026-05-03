@@ -20,11 +20,15 @@ interface TableProps<T> {
   total?: number
   onPageChange?: (page: number) => void
   rowKey?: (item: T) => string | number
+  selectable?: boolean
+  selectedKeys?: (string | number)[]
+  onSelectionChange?: (keys: (string | number)[]) => void
 }
 
 export default function Table<T>({
   columns, data, loading, emptyMessage = 'Belum ada data',
-  emptyIcon, page = 1, totalPages = 1, total, onPageChange, rowKey
+  emptyIcon, page = 1, totalPages = 1, total, onPageChange, rowKey,
+  selectable, selectedKeys, onSelectionChange
 }: TableProps<T>) {
   const getKey = (item: T, i: number) => rowKey ? rowKey(item) : i
 
@@ -34,6 +38,19 @@ export default function Table<T>({
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              {selectable && (
+                <th className="th w-10 text-center px-4">
+                  <input type="checkbox" 
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    checked={data.length > 0 && selectedKeys?.length === data.length}
+                    onChange={(e) => {
+                      if (onSelectionChange) {
+                        onSelectionChange(e.target.checked ? data.map((item, i) => getKey(item, i)) : [])
+                      }
+                    }}
+                  />
+                </th>
+              )}
               {columns.map(col => (
                 <th key={col.key} className={cn('th', col.headerClass)}>{col.label}</th>
               ))}
@@ -43,6 +60,7 @@ export default function Table<T>({
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i} className="border-b border-slate-100">
+                  {selectable && <td className="td w-10"></td>}
                   {columns.map(col => (
                     <td key={col.key} className="td">
                       <div className="h-4 bg-slate-200 rounded animate-pulse" style={{ width: `${50 + Math.random() * 40}%` }} />
@@ -52,7 +70,7 @@ export default function Table<T>({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={columns.length + (selectable ? 1 : 0)}>
                   <div className="empty-state">
                     {emptyIcon ?? <Inbox className="w-12 h-12 opacity-30" />}
                     <span className="text-sm font-medium">{emptyMessage}</span>
@@ -60,15 +78,34 @@ export default function Table<T>({
                 </td>
               </tr>
             ) : (
-              data.map((item, i) => (
-                <tr key={getKey(item, i)} className="tr">
-                  {columns.map(col => (
-                    <td key={col.key} className={cn('td', col.className)}>
-                      {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              data.map((item, i) => {
+                const key = getKey(item, i)
+                return (
+                  <tr key={key} className={cn('tr', selectedKeys?.includes(key) && 'bg-indigo-50/50')}>
+                    {selectable && (
+                      <td className="td w-10 text-center px-4" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox"
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          checked={selectedKeys?.includes(key) || false}
+                          onChange={(e) => {
+                            if (onSelectionChange && selectedKeys) {
+                              const checked = e.target.checked
+                              onSelectionChange(
+                                checked ? [...selectedKeys, key] : selectedKeys.filter(k => k !== key)
+                              )
+                            }
+                          }}
+                        />
+                      </td>
+                    )}
+                    {columns.map(col => (
+                      <td key={col.key} className={cn('td', col.className)}>
+                        {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
