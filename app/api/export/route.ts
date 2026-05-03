@@ -87,9 +87,10 @@ export async function GET(req: NextRequest) {
         const absAll = await prisma.absensi.findMany({ where: { siswa_id: { in: ids }, ...(startDate && endDate ? { tanggal: { gte: new Date(startDate), lte: new Date(endDate) } } : {}) } })
         const rows = siswaList.map((s, i) => {
           const abs = absAll.filter(a => a.siswa_id === s.id)
-          const hadir = abs.filter(a => a.status === 'hadir').length
+          const absMeetings = abs.filter(a => a.status !== ('kas_saja' as any))
+          const hadir = absMeetings.filter(a => a.status === 'hadir').length
           return {
-            'No': i + 1, 'Nama': s.nama, 'Kelas': s.kelas || '-', 'Ekskul': ORG_LABELS[s.ekskul as keyof typeof ORG_LABELS], 'Total Pertemuan': abs.length, 'Hadir': hadir, 'Tidak Hadir': abs.filter(a => a.status === 'tidak_hadir').length, 'Izin': abs.filter(a => a.status === 'izin').length, 'Sakit': abs.filter(a => a.status === 'sakit').length, '% Kehadiran': abs.length ? `${Math.round(hadir/abs.length*100)}%` : '0%', 'Total Kas': abs.reduce((s, a) => s + a.uang_kas, 0),
+            'No': i + 1, 'Nama': s.nama, 'Kelas': s.kelas || '-', 'Ekskul': ORG_LABELS[s.ekskul as keyof typeof ORG_LABELS], 'Total Pertemuan': absMeetings.length, 'Hadir': hadir, 'Tidak Hadir': absMeetings.filter(a => a.status === 'tidak_hadir').length, 'Izin': absMeetings.filter(a => a.status === 'izin').length, 'Sakit': absMeetings.filter(a => a.status === 'sakit').length, '% Kehadiran': absMeetings.length ? `${Math.round(hadir/absMeetings.length*100)}%` : '0%', 'Total Kas': abs.reduce((s, a) => s + (a.uang_kas || 0), 0),
           }
         })
         const ws = XLSX.utils.json_to_sheet(rows, { header: ['No', 'Nama', 'Kelas', 'Ekskul', 'Total Pertemuan', 'Hadir', 'Tidak Hadir', 'Izin', 'Sakit', '% Kehadiran', 'Total Kas'] })
@@ -101,9 +102,10 @@ export async function GET(req: NextRequest) {
         const absAll = await prisma.absensiOrganisasi.findMany({ where: { organisasi_type: o as any, ...(o === 'osis' ? { anggota_osis_id: { in: ids } } : { anggota_mpk_id: { in: ids } }), ...(startDate && endDate ? { tanggal: { gte: new Date(startDate), lte: new Date(endDate) } } : {}) } })
         const rows = anggotaList.map((a, i) => {
           const abs = absAll.filter(x => o === 'osis' ? x.anggota_osis_id === a.id : x.anggota_mpk_id === a.id)
-          const hadir = abs.filter(x => x.status === 'hadir').length
+          const absMeetings = abs.filter(x => x.status !== ('kas_saja' as any))
+          const hadir = absMeetings.filter(x => x.status === 'hadir').length
           return {
-            'No': i + 1, 'Nama': a.nama, 'Jabatan': a.jabatan || '-', 'Total Pertemuan': abs.length, 'Hadir': hadir, 'Tidak Hadir': abs.filter(x => x.status === 'tidak_hadir').length, 'Izin': abs.filter(x => x.status === 'izin').length, 'Sakit': abs.filter(x => x.status === 'sakit').length, '% Kehadiran': abs.length ? `${Math.round(hadir/abs.length*100)}%` : '0%', 'Total Kas': abs.reduce((s, x) => s + x.uang_kas, 0),
+            'No': i + 1, 'Nama': a.nama, 'Jabatan': a.jabatan || '-', 'Total Pertemuan': absMeetings.length, 'Hadir': hadir, 'Tidak Hadir': absMeetings.filter(x => x.status === 'tidak_hadir').length, 'Izin': absMeetings.filter(x => x.status === 'izin').length, 'Sakit': absMeetings.filter(x => x.status === 'sakit').length, '% Kehadiran': absMeetings.length ? `${Math.round(hadir/absMeetings.length*100)}%` : '0%', 'Total Kas': abs.reduce((s, x) => s + (x.uang_kas || 0), 0),
           }
         })
         const ws = XLSX.utils.json_to_sheet(rows, { header: ['No', 'Nama', 'Jabatan', 'Total Pertemuan', 'Hadir', 'Tidak Hadir', 'Izin', 'Sakit', '% Kehadiran', 'Total Kas'] })

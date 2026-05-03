@@ -30,6 +30,7 @@ enum StatusAbsensi {
   tidak_hadir
   izin
   sakit
+  kas_saja
 }
 
 enum AksiLog {
