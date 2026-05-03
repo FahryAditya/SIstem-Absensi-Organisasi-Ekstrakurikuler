@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { ROLE_LABELS } from '@/lib/auth-shared'
 import {
   LayoutDashboard, Users, ClipboardList, Building2, UserCog,
-  Download, ScrollText, GraduationCap, X, ChevronRight, Wallet, HandCoins
+  Download, ScrollText, GraduationCap, X, ChevronRight, Wallet, HandCoins, Database
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -52,6 +52,7 @@ function getNavItems(role: string) {
   if (role === 'administrator') {
     toolLinks.unshift({ href: '/admin', label: 'Kelola User', icon: UserCog })
     toolLinks.push({ href: '/log', label: 'Log Aktivitas', icon: ScrollText })
+    toolLinks.push({ href: '/api/admin/backup', label: 'Backup SQL', icon: Database, target: '_blank' } as any)
   }
 
   items.push({ section: 'Tools', links: toolLinks })
@@ -120,6 +121,7 @@ export default function Sidebar({ user, mobileOpen, onClose }: SidebarProps) {
                   key={link.href}
                   href={link.href}
                   onClick={onClose}
+                  target={(link as any).target}
                   className={cn('nav-link', active && 'nav-link-active')}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />

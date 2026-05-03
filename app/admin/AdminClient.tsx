@@ -8,7 +8,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { RoleBadge } from '@/components/ui/Badges'
 import { formatDateTime } from '@/lib/utils'
 import { ROLE_LABELS } from '@/lib/auth-shared'
-import { UserCog, Plus, Pencil, Trash2, Loader2, Shield, Mail, User, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { UserCog, Plus, Pencil, Trash2, Loader2, Shield, Mail, User, Lock, Eye, EyeOff, AlertTriangle, Database } from 'lucide-react'
 
 interface UserData { id: number; nama: string; email: string; role: string; created_at: string }
 interface Props { user: { id: number; nama: string; email: string; role: string } }
@@ -128,6 +128,12 @@ export default function AdminClient({ user }: Props) {
           <p className="page-sub mt-0.5">Buat, edit, dan hapus akun pengguna sistem</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => window.open('/api/admin/backup', '_blank')} className="btn-secondary">
+            <span className="flex items-center gap-2 text-indigo-600 font-semibold">
+              <Database className="w-4 h-4" />
+              Backup SQL
+            </span>
+          </button>
           <button onClick={() => window.open('/api/export?tipe=admin', '_blank')} className="btn-secondary">
             <span className="flex items-center gap-2 text-indigo-600 font-semibold">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
