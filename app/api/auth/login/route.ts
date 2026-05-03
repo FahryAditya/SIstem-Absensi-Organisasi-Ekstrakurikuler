@@ -32,8 +32,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nama tidak sesuai dengan akun ini' }, { status: 401 })
     }
 
-    // Verifikasi password
-    const passwordMatch = await bcrypt.compare(password, user.password)
+    // Verifikasi password (mendukung hash bcrypt lama dan plain text baru)
+    let passwordMatch = false
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      passwordMatch = await bcrypt.compare(password, user.password)
+    } else {
+      passwordMatch = password === user.password
+    }
+
     if (!passwordMatch) {
       return NextResponse.json({ error: 'Password salah' }, { status: 401 })
     }

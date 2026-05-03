@@ -12,8 +12,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ user, pageTitle, children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const themeClass = user.role === 'administrator' ? 'theme-admin' : ''
+
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className={`flex h-screen overflow-hidden bg-slate-50 ${themeClass}`}>
       <Sidebar user={user} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar user={user} pageTitle={pageTitle} onMenuClick={() => setMobileOpen(true)} />

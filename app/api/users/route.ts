@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   if (!requireAdmin(userRole)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const users = await prisma.user.findMany({
-    select: { id: true, nama: true, email: true, role: true, created_at: true },
+    select: { id: true, nama: true, email: true, role: true, password: true, created_at: true },
     orderBy: { created_at: 'asc' }
   })
   return NextResponse.json({ data: users })
@@ -45,9 +45,8 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } })
   if (existing) return NextResponse.json({ error: 'Email sudah digunakan' }, { status: 400 })
 
-  const hashed = await bcrypt.hash(parsed.data.password, 12)
   const user = await prisma.user.create({
-    data: { ...parsed.data, password: hashed },
+    data: { ...parsed.data, password: parsed.data.password },
     select: { id: true, nama: true, email: true, role: true }
   })
 
@@ -83,7 +82,7 @@ export async function PUT(req: NextRequest) {
   if (!existing) return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
 
   const updateData: Record<string, unknown> = { ...rest }
-  if (password) updateData.password = await bcrypt.hash(password, 12)
+  if (password) updateData.password = password
 
   const updated = await prisma.user.update({
     where: { id },

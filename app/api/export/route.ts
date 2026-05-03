@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAccessibleOrgs } from '@/lib/auth-shared'
+import { getAccessibleOrgs, ROLE_LABELS } from '@/lib/auth-shared'
 import { ORG_LABELS, STATUS_LABELS, formatDate, formatCurrency } from '@/lib/utils'
 import * as XLSX from 'xlsx'
 
@@ -23,7 +23,22 @@ export async function GET(req: NextRequest) {
   const accessible = getAccessibleOrgs(userRole)
   const filter = org && accessible.includes(org) ? [org] : accessible
 
-  if (tipe === 'siswa') {
+  if (tipe === 'admin') {
+    if (userRole !== 'administrator') {
+      return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+    }
+    const data = await prisma.user.findMany({ orderBy: { nama: 'asc' } })
+    const rows = data.map((u) => ({
+      'Nama': u.nama,
+      'Email': u.email,
+      'Role': ROLE_LABELS[u.role as keyof typeof ROLE_LABELS] || u.role,
+      'Password': u.password
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows, { header: ['Nama', 'Email', 'Role', 'Password'] })
+    ws['!cols'] = [30, 30, 25, 45].map(w => ({ wch: w }))
+    XLSX.utils.book_append_sheet(wb, ws, 'Daftar Admin')
+
+  } else if (tipe === 'siswa') {
     for (const o of filter) {
       if (o === 'programming' || o === 'english') {
         const data = await prisma.siswa.findMany({

@@ -7,7 +7,45 @@
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; }
+  
+  :root {
+    /* Default Indigo RGB values */
+    --color-primary-50: 238 242 255;
+    --color-primary-100: 224 231 255;
+    --color-primary-200: 199 210 254;
+    --color-primary-300: 165 180 252;
+    --color-primary-400: 129 140 248;
+    --color-primary-500: 99 102 241;
+    --color-primary-600: 79 70 229;
+    --color-primary-700: 67 56 202;
+    --color-primary-800: 55 48 163;
+    --color-primary-900: 49 46 129;
+    --color-primary-950: 30 27 75;
+
+    /* Backgrounds */
+    --color-bg-50: 248 250 252; /* slate-50 */
+  }
+
+  .theme-admin {
+    /* Administrator Theme Colors: Premium Palette */
+    --color-primary-50: 242 248 255; /* Soft Icy Blue */
+    --color-primary-100: 171 210 250; /* Icy Blue */
+    --color-primary-200: 144 178 252;
+    --color-primary-300: 118 146 255; /* Cornflower Blue */
+    --color-primary-400: 89 113 197;
+    --color-primary-500: 61 81 140; /* Dusk Blue */
+    --color-primary-600: 27 44 193;  /* Persian Blue */
+    --color-primary-700: 20 33 145;
+    --color-primary-800: 14 27 104;
+    --color-primary-900: 9 21 64; /* Deep Navy */
+    --color-primary-950: 5 11 32;
+
+    --color-bg-50: 246 250 253; /* F6FAFD background */
+  }
+
   body { @apply bg-slate-50 text-slate-800 font-sans; }
+  .theme-admin { background-color: rgb(var(--color-bg-50)); }
+
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
