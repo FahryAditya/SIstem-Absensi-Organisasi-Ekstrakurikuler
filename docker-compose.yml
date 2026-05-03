@@ -35,7 +35,7 @@ services:
     container_name: ekskul_app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "80:3000" # Diarahkan ke port 80 agar sesuai dengan NAT (Public 8080/8443)
     environment:
       DATABASE_URL: mysql://${MYSQL_USER:-ekskul_user}:${MYSQL_PASSWORD:-ekskul_pass}@mysql:3306/${MYSQL_DATABASE:-ekskul_db}
       JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-production-min-32-chars}
