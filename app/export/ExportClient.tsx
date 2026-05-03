@@ -35,7 +35,7 @@ export default function ExportClient({ user }: Props) {
   const orgOrgs = orgs.filter(o => ['osis', 'mpk'].includes(o))
 
   const exportOptions: ExportOption[] = [
-    ekskulOrgs.length > 0 && {
+    {
       value: 'absensi_ekskul' as ExportType,
       label: 'Laporan Absensi',
       desc: 'Riwayat absensi lengkap (Ekskul / OSIS / MPK)',
@@ -44,7 +44,7 @@ export default function ExportClient({ user }: Props) {
       needsOrg: orgs.length > 1,
       orgTypes: orgs as any[],
     },
-    ekskulOrgs.length > 0 && {
+    {
       value: 'rekap_siswa' as ExportType,
       label: 'Rekap Kehadiran',
       desc: 'Ringkasan kehadiran & kas per individu',
@@ -53,7 +53,7 @@ export default function ExportClient({ user }: Props) {
       needsOrg: orgs.length > 1,
       orgTypes: orgs as any[],
     },
-    ekskulOrgs.length > 0 && {
+    {
       value: 'siswa' as ExportType,
       label: 'Data Anggota / Siswa',
       desc: 'Daftar semua anggota unit yang terdaftar',
@@ -62,7 +62,7 @@ export default function ExportClient({ user }: Props) {
       needsOrg: orgs.length > 1,
       orgTypes: orgs as any[],
     },
-  ].filter(Boolean) as ExportOption[]
+  ]
 
   const currentOption = exportOptions.find(o => o.value === exportType) ?? exportOptions[0]
 
