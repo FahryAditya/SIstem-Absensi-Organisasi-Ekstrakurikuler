@@ -44,7 +44,8 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
   // Form state
   const [fNama, setFNama] = useState('')
   const [fNis, setFNis] = useState('')
-  const [fKelas, setFKelas] = useState('')
+  const [fTingkat, setFTingkat] = useState('')
+  const [fJurusan, setFJurusan] = useState('')
   const [fEkskul, setFEkskul] = useState<'programming' | 'english'>('programming')
 
   const canProg = canAccessProgramming(user.role)
@@ -71,14 +72,19 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
 
   function openAdd() {
     setEditTarget(null)
-    setFNama(''); setFNis(''); setFKelas('')
+    setFNama(''); setFNis(''); setFTingkat(''); setFJurusan('')
     setFEkskul(defaultOrg || (canProg ? 'programming' : 'english'))
     setModalOpen(true)
   }
 
   function openEdit(s: Siswa) {
     setEditTarget(s)
-    setFNama(s.nama); setFNis(s.nis || ''); setFKelas(s.kelas || '')
+    setFNama(s.nama); setFNis(s.nis || '')
+    const kls = s.kelas || ''
+    const parts = kls.split(' ')
+    const t = ['X', 'XI', 'XII'].includes(parts[0]) ? parts[0] : ''
+    setFTingkat(t)
+    setFJurusan(t ? parts.slice(1).join(' ') : kls)
     setFEkskul(s.ekskul as 'programming' | 'english')
     setModalOpen(true)
   }
@@ -86,7 +92,8 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
   async function handleSave() {
     if (!fNama.trim()) { toast.error('Nama wajib diisi'); return }
     setSaving(true)
-    const body = { nama: fNama.trim(), nis: fNis.trim() || undefined, kelas: fKelas.trim() || undefined, ekskul: fEkskul }
+    const finalKelas = `${fTingkat} ${fJurusan}`.trim()
+    const body = { nama: fNama.trim(), nis: fNis.trim() || undefined, kelas: finalKelas || undefined, ekskul: fEkskul }
     const res = await fetch('/api/siswa', {
       method: editTarget ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -225,25 +232,71 @@ export default function SiswaClient({ user, defaultOrg }: Props) {
         <div className="space-y-4">
           <div className="form-group">
             <label className="label">Nama Lengkap *</label>
-            <input value={fNama} onChange={e => setFNama(e.target.value)} placeholder="Nama lengkap siswa" className="input" autoFocus />
+            <input 
+              value={fNama} 
+              onChange={e => {
+                const val = e.target.value
+                if (val && !/^[a-zA-Z\s.']*$/.test(val)) {
+                  toast.error('Nama hanya boleh berisi huruf', { id: 'nama-error' })
+                  return
+                }
+                setFNama(val)
+              }} 
+              placeholder="Nama lengkap siswa (Hanya Huruf)" 
+              className="input" 
+              autoFocus 
+            />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="form-group">
-              <label className="label">NIS</label>
-              <div className="relative">
-                <Contact className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input value={fNis} onChange={e => setFNis(e.target.value)} placeholder="Opsional" className="input pl-9" />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="label">Kelas</label>
-              <input value={fKelas} onChange={e => setFKelas(e.target.value)} placeholder="Cth: XI RPL" className="input" />
+          
+          <div className="form-group">
+            <label className="label">NIS</label>
+            <div className="relative">
+              <Contact className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                value={fNis} 
+                onChange={e => {
+                  const val = e.target.value
+                  if (val && !/^\d*$/.test(val)) {
+                    toast.error('NIS hanya boleh berisi angka', { id: 'nis-error' })
+                    return
+                  }
+                  setFNis(val)
+                }} 
+                placeholder="Opsional (Hanya Angka)" 
+                className="input pl-9 font-mono" 
+                inputMode="numeric"
+              />
             </div>
           </div>
+
+          <div className="form-group">
+            <label className="label">Tingkat & Kejuruan</label>
+            <div className="flex gap-3">
+              <select value={fTingkat} onChange={e => setFTingkat(e.target.value)} className="input sm:w-32 w-28 cursor-pointer font-medium text-slate-700">
+                <option value="" disabled>Tingkat</option>
+                <option value="X">Kelas X</option>
+                <option value="XI">Kelas XI</option>
+                <option value="XII">Kelas XII</option>
+              </select>
+              <select value={fJurusan} onChange={e => setFJurusan(e.target.value)} className="input flex-1 cursor-pointer font-medium text-slate-700">
+                <option value="" disabled>Pilih Kejuruan...</option>
+                <option value="AKL">AKL</option>
+                <option value="MPLB 1">MPLB 1</option>
+                <option value="MPLB 2">MPLB 2</option>
+                <option value="PPLG">PPLG</option>
+                <option value="DKV">DKV</option>
+                <option value="TJKT">TJKT</option>
+                <option value="AKC">AKC</option>
+                <option value="FKK">FKK</option>
+                <option value="FARMASI">FARMASI</option>
+              </select>
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="label">Ekstrakurikuler</label>
             <select value={fEkskul} onChange={e => setFEkskul(e.target.value as 'programming' | 'english')}
-              disabled={!canProg || !canEng} className="input">
+              disabled={!canProg || !canEng} className="input cursor-pointer font-medium text-slate-700">
               {canProg && <option value="programming">Programming</option>}
               {canEng && <option value="english">English Club</option>}
             </select>

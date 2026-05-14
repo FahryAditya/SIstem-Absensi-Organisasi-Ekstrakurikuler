@@ -100,7 +100,8 @@ export default function ExportClient({ user }: Props) {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="xl:col-span-2 space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2.5">
@@ -218,6 +219,48 @@ export default function ExportClient({ user }: Props) {
           <div className="flex items-center gap-2"><span className="text-green-500">✓</span> Data sesuai hak akses role Anda</div>
           <div className="flex items-center gap-2"><span className="text-green-500">✓</span> Tersedia sheet Ringkasan untuk absensi ekskul</div>
           <div className="flex items-center gap-2"><span className="text-green-500">✓</span> Siap cetak / kirim ke kepala sekolah</div>
+        </div>
+      </div>
+      </div>
+
+      {/* Kolom Kanan - Info & Panduan */}
+      <div className="space-y-6">
+        <div className="card p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg border-0">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
+              <FileSpreadsheet className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Panduan Export</h3>
+              <p className="text-indigo-100 text-xs">Informasi jenis laporan</p>
+            </div>
+          </div>
+          <ul className="space-y-4 text-sm text-indigo-50">
+            <li className="flex items-start gap-3">
+              <div className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-300"></div>
+              <span className="leading-relaxed"><strong>Laporan Absensi</strong> berisi riwayat setiap pertemuan, yang dapat difilter berdasarkan rentang waktu tertentu.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-300"></div>
+              <span className="leading-relaxed"><strong>Rekap Kehadiran</strong> memberikan persentase dan ringkasan kehadiran tiap individu secara keseluruhan.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-300"></div>
+              <span className="leading-relaxed"><strong>Data Anggota</strong> menampilkan biodata dari seluruh siswa yang berstatus aktif dalam sistem saat ini.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="card p-5 border border-slate-200 bg-white">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="p-1.5 bg-amber-50 rounded-md">
+              <Info className="w-4 h-4 text-amber-600" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">Keamanan Data</h3>
+          </div>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Data yang diexport mengandung informasi sensitif terkait siswa. Pastikan Anda menyimpan dokumen ini di tempat yang aman dan tidak menyebarkannya kepada pihak yang tidak berkepentingan.
+          </p>
         </div>
       </div>
     </div>

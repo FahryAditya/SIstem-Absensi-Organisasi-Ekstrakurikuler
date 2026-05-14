@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)
 
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    const timeString = `${days[today.getDay()]}, ${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()} ${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`
+    
+    const finalKeterangan = `[${timeString}] ${keterangan}`
+
     if (org === 'programming' || org === 'english') {
       const siswa = await prisma.siswa.findUnique({ where: { id: id_anggota } })
       if (!siswa || siswa.ekskul !== org) return NextResponse.json({ error: 'Siswa tidak valid' }, { status: 400 })
@@ -59,7 +65,7 @@ export async function POST(req: NextRequest) {
           where: { id: existing.id },
           data: {
             uang_kas: existing.uang_kas + nominal,
-            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${finalKeterangan}` : finalKeterangan,
             updated_by: ctx.userId
           }
         })
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
             tanggal: startOfDay,
             status: 'kas_saja' as any,
             uang_kas: nominal,
-            keterangan: keterangan,
+            keterangan: finalKeterangan,
             created_by: ctx.userId,
           }
         })
@@ -89,7 +95,7 @@ export async function POST(req: NextRequest) {
           where: { id: existing.id },
           data: {
             uang_kas: existing.uang_kas + nominal,
-            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${finalKeterangan}` : finalKeterangan,
             updated_by: ctx.userId
           }
         })
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
             tanggal: startOfDay,
             status: 'kas_saja' as any,
             uang_kas: nominal,
-            keterangan: keterangan,
+            keterangan: finalKeterangan,
             created_by: ctx.userId,
           }
         })
@@ -120,7 +126,7 @@ export async function POST(req: NextRequest) {
           where: { id: existing.id },
           data: {
             uang_kas: existing.uang_kas + nominal,
-            keterangan: existing.keterangan ? `${existing.keterangan} | ${keterangan}` : keterangan,
+            keterangan: existing.keterangan ? `${existing.keterangan} | ${finalKeterangan}` : finalKeterangan,
             updated_by: ctx.userId
           }
         })
@@ -132,7 +138,7 @@ export async function POST(req: NextRequest) {
             tanggal: startOfDay,
             status: 'kas_saja' as any,
             uang_kas: nominal,
-            keterangan: keterangan,
+            keterangan: finalKeterangan,
             created_by: ctx.userId,
           }
         })

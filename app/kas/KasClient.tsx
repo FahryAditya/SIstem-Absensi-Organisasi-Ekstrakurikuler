@@ -10,6 +10,7 @@ interface KasData {
   nama: string
   kelas: string
   total_kas: number
+  terakhir_bayar?: string | null
 }
 
 interface Props {
@@ -18,6 +19,23 @@ interface Props {
 
 export default function KasClient({ user }: Props) {
   const [data, setData] = useState<KasData[]>([])
+  const [allData, setAllData] = useState<KasData[]>([])
+
+  const formatTerakhirBayar = (isoDate: string | null | undefined) => {
+    if (!isoDate) return '-'
+    const d = new Date(isoDate)
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+    
+    const hari = days[d.getDay()]
+    const tanggalNum = d.getDate()
+    const bulan = months[d.getMonth()]
+    const tahun = d.getFullYear()
+    const jam = d.getHours().toString().padStart(2, '0')
+    const menit = d.getMinutes().toString().padStart(2, '0')
+    
+    return `${jam}:${menit} ${hari}, ${tanggalNum} ${bulan} ${tahun}`
+  }
   const [totalKas, setTotalKas] = useState(0)
   const [orgs, setOrgs] = useState<string[]>([])
   const [activeOrg, setActiveOrg] = useState<string>('')
@@ -33,14 +51,14 @@ export default function KasClient({ user }: Props) {
   const [txLoading, setTxLoading] = useState(false)
 
   const fetchData = () => {
-    let url = `/api/kas?search=${encodeURIComponent(search)}`
-    if (activeOrg) url += `&org=${activeOrg}`
+    let url = `/api/kas`
+    if (activeOrg) url += `?org=${activeOrg}`
 
     setLoading(true)
     fetch(url)
       .then(res => res.json())
       .then(json => {
-        setData(json.data || [])
+        setAllData(json.data || [])
         setTotalKas(json.totalKas || 0)
         setOrgs(json.orgs || [])
         if (!activeOrg && json.activeOrg) setActiveOrg(json.activeOrg)
@@ -50,11 +68,21 @@ export default function KasClient({ user }: Props) {
   }
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchData()
-    }, 300)
-    return () => clearTimeout(timeoutId)
-  }, [search, activeOrg])
+    fetchData()
+  }, [activeOrg])
+
+  useEffect(() => {
+    if (!search) {
+      setData(allData)
+      return
+    }
+    const lowerSearch = search.toLowerCase()
+    const filtered = allData.filter(item => 
+      item.nama.toLowerCase().includes(lowerSearch) || 
+      (item.kelas || '').toLowerCase().includes(lowerSearch)
+    )
+    setData(filtered)
+  }, [search, allData])
 
   function openModal(item: KasData, type: 'setor' | 'tarik') {
     setSelectedItem(item)
@@ -166,20 +194,21 @@ export default function KasClient({ user }: Props) {
                 <th className="min-w-[200px]">Nama Anggota</th>
                 <th className="min-w-[120px]">Unit / Kelas</th>
                 <th className="text-right min-w-[120px]">Total Kas</th>
+                <th className="min-w-[180px]">Waktu Bayar</th>
                 <th className="w-40 text-center">Aksi (Manual)</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="h-32 text-center text-slate-400">
+                  <td colSpan={6} className="h-32 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                     Memuat data kas...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="h-32 text-center text-slate-400">
+                  <td colSpan={6} className="h-32 text-center text-slate-400">
                     Belum ada data anggota atau pembayaran kas.
                   </td>
                 </tr>
@@ -188,11 +217,14 @@ export default function KasClient({ user }: Props) {
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="font-medium text-slate-500">{idx + 1}</td>
                     <td className="font-bold text-slate-800 whitespace-nowrap">{item.nama}</td>
-                    <td className="text-slate-500">{item.kelas}</td>
-                    <td className="text-right font-mono font-bold text-emerald-600 bg-emerald-50/30">
+                    <td className="text-slate-500 whitespace-nowrap">{item.kelas}</td>
+                    <td className="text-right font-mono font-bold text-emerald-600 bg-emerald-50/30 whitespace-nowrap">
                       {formatCurrency(item.total_kas)}
                     </td>
-                    <td>
+                    <td className="text-slate-500 text-xs font-mono whitespace-nowrap">
+                      {formatTerakhirBayar(item.terakhir_bayar)}
+                    </td>
+                    <td className="whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button onClick={() => openModal(item, 'setor')} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg tooltip-trigger" title="Setor / Tambah Kas">
                           <Plus className="w-4 h-4" />

@@ -31,52 +31,73 @@ export async function GET(req: NextRequest) {
     if (org === 'programming' || org === 'english') {
       const siswaList = await prisma.siswa.findMany({
         where: { ekskul: org, ...searchCondition },
-        include: { absensi: { select: { uang_kas: true } } },
+        include: { absensi: { select: { uang_kas: true, updated_at: true } } },
         orderBy: { nama: 'asc' }
       })
 
       results = siswaList.map(s => {
+        let terakhir_bayar = null
+        const paidAbsensi = s.absensi.filter((a: any) => a.uang_kas !== 0)
+        if (paidAbsensi.length > 0) {
+          const latest = paidAbsensi.reduce((a: any, b: any) => new Date(a.updated_at) > new Date(b.updated_at) ? a : b)
+          terakhir_bayar = latest.updated_at.toISOString()
+        }
         const total = s.absensi.reduce((sum: number, a: any) => sum + (a.uang_kas || 0), 0)
         totalKasAll += total
         return {
           id: s.id,
           nama: s.nama,
           kelas: s.kelas || '-',
-          total_kas: total
+          total_kas: total,
+          terakhir_bayar
         }
       })
     } else if (org === 'osis') {
       const anggotaList = await prisma.anggotaOsis.findMany({
         where: searchCondition,
-        include: { absensi: { select: { uang_kas: true } } },
+        include: { absensi: { select: { uang_kas: true, updated_at: true } } },
         orderBy: { nama: 'asc' }
       })
 
       results = anggotaList.map(a => {
-        const total = a.absensi.reduce((sum: number, ab: any) => sum + (ab.uang_kas || 0), 0)
-        totalKasAll += total
-        return {
-          id: a.id,
-          nama: a.nama,
-          kelas: a.jabatan || '-', // Menggunakan 'kelas' untuk konsistensi di tabel UI, isinya adalah jabatan
-          total_kas: total
+        let terakhir_bayar = null
+        const paidAbsensi = a.absensi.filter((ab: any) => ab.uang_kas !== 0)
+        if (paidAbsensi.length > 0) {
+          const latest = paidAbsensi.reduce((ab1: any, ab2: any) => new Date(ab1.updated_at) > new Date(ab2.updated_at) ? ab1 : ab2)
+          terakhir_bayar = latest.updated_at.toISOString()
         }
-      })
-    } else if (org === 'mpk') {
-      const anggotaList = await prisma.anggotaMpk.findMany({
-        where: searchCondition,
-        include: { absensi: { select: { uang_kas: true } } },
-        orderBy: { nama: 'asc' }
-      })
-
-      results = anggotaList.map(a => {
         const total = a.absensi.reduce((sum: number, ab: any) => sum + (ab.uang_kas || 0), 0)
         totalKasAll += total
         return {
           id: a.id,
           nama: a.nama,
           kelas: a.jabatan || '-',
-          total_kas: total
+          total_kas: total,
+          terakhir_bayar
+        }
+      })
+    } else if (org === 'mpk') {
+      const anggotaList = await prisma.anggotaMpk.findMany({
+        where: searchCondition,
+        include: { absensi: { select: { uang_kas: true, updated_at: true } } },
+        orderBy: { nama: 'asc' }
+      })
+
+      results = anggotaList.map(a => {
+        let terakhir_bayar = null
+        const paidAbsensi = a.absensi.filter((ab: any) => ab.uang_kas !== 0)
+        if (paidAbsensi.length > 0) {
+          const latest = paidAbsensi.reduce((ab1: any, ab2: any) => new Date(ab1.updated_at) > new Date(ab2.updated_at) ? ab1 : ab2)
+          terakhir_bayar = latest.updated_at.toISOString()
+        }
+        const total = a.absensi.reduce((sum: number, ab: any) => sum + (ab.uang_kas || 0), 0)
+        totalKasAll += total
+        return {
+          id: a.id,
+          nama: a.nama,
+          kelas: a.jabatan || '-',
+          total_kas: total,
+          terakhir_bayar
         }
       })
     }
